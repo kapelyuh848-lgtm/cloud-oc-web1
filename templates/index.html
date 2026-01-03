@@ -2,33 +2,37 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Nano Banana Auth</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в CloudOC</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Стиль на случай, если файл css не подтянется */
+        body { font-family: sans-serif; background-color: #1e1e1e; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background-color: #2d2d2d; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center; width: 300px; }
+        h1 { margin-bottom: 20px; font-size: 24px; }
+        input { width: 90%; padding: 12px; margin: 10px 0; border: none; border-radius: 5px; background: #404040; color: white; }
+        button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+        button:hover { background-color: #218838; }
+        .link { display: block; margin-top: 20px; color: #007bff; text-decoration: none; }
+        .link:hover { color: #66b0ff; }
+    </style>
 </head>
 <body>
+
     <div class="container">
-        <h1 class="glitch">Nano Banana OS</h1>
+        <h1>CloudOC Login</h1>
 
-        <div class="forms-container">
-            <div class="card">
-                <h2>Вход</h2>
-                <form action="/login" method="POST">
-                    <input type="text" name="login" placeholder="Логин" required>
-                    <input type="password" name="password" placeholder="Пароль" required>
-                    <button type="submit">Войти в Систему</button>
-                </form>
-            </div>
+        <form action="/api/login" method="POST">
+            
+            <input type="text" name="username" placeholder="Ваш логин" required>
+            
+            <input type="text" name="code" placeholder="Код 2FA (6 цифр)" required>
+            
+            <button type="submit">Войти</button>
+        </form>
 
-            <div class="card">
-                <h2>Регистрация</h2>
-                <form action="/register" method="POST">
-                    <input type="text" name="login" placeholder="Уникальный ID (login)" required>
-                    <input type="text" name="display_name" placeholder="Имя для системы" required>
-                    <input type="password" name="password" placeholder="Пароль" required>
-                    <button type="submit" class="btn-reg">Создать Аккаунт</button>
-                </form>
-            </div>
-        </div>
+        <a href="/register" class="link">Нет аккаунта? Зарегистрироваться</a>
     </div>
+
 </body>
 </html>
