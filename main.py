@@ -1,110 +1,76 @@
-import os
-import json
+from flask import Flask, request, jsonify, render_template
 import pyotp
-from flask import Flask, render_template, request, jsonify
+import json
+import os
 
-# Указываем Flask, где искать шаблоны, даже если пути кривые
-template_dir = os.path.abspath('templates')
-app = Flask(__name__, template_folder=template_dir)
+app = Flask(__name__)
 
+# Файл базы данных
 DB_FILE = 'users.json'
 
-# --- ФУНКЦИИ БАЗЫ ДАННЫХ (С ЗАЩИТОЙ ОТ ОШИБОК) ---
-
-def init_db():
-    """Создает файл базы, если его нет"""
-    if not os.path.exists(DB_FILE):
-        try:
-            with open(DB_FILE, 'w') as f:
-                json.dump({}, f)
-        except Exception as e:
-            print(f"CRITICAL ERROR: Could not create DB file. {e}")
-
+# --- Вспомогательные функции ---
 def load_users():
-    init_db() # Сначала проверяем, есть ли файл
+    # Если файла нет, возвращаем пустой словарь (как будто там {})
+    if not os.path.exists(DB_FILE):
+        return {}
     try:
         with open(DB_FILE, 'r') as f:
-            return json.load(f)
+            content = f.read().strip()
+            # Если файл пустой, возвращаем {}
+            if not content: 
+                return {}
+            return json.loads(content)
     except Exception as e:
-        print(f"Error reading DB: {e}")
+        print(f"Error loading DB: {e}")
         return {}
 
 def save_users(users):
-    try:
-        with open(DB_FILE, 'w') as f:
-            json.dump(users, f, indent=4)
-    except Exception as e:
-        print(f"Error saving DB: {e}")
+    with open(DB_FILE, 'w') as f:
+        json.dump(users, f, indent=4)
 
-# --- МАРШРУТЫ ---
-
+# --- Страницы сайта (HTML) ---
 @app.route('/')
 def index():
-    try:
-        return render_template('index.html')
-    except Exception as e:
-        # Если шаблона нет, покажем ошибку прямо на экране, а не 500
-        return f"<h1>Error: Template 'index.html' not found!</h1><p>Details: {e}</p><p>Current folder: {os.getcwd()}</p><p>Templates folder: {template_dir}</p>"
+    # Главная страница
+    return render_template('index.html')
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        # Универсальное получение данных (и от сайта, и от лаунчера)
-        username = request.form.get('username')
-        
-        # Если пусто, пробуем JSON (для лаунчера)
-        if not username and request.is_json:
-            username = request.json.get('username')
+@app.route('/register')
+def register_page():
+    # Страница регистрации
+    return render_template('register.html')
 
-        if not username:
-            return "Username required", 400
-
-        users = load_users()
-        if username in users:
-            return "User already exists", 400
-
-        # Генерация секрета
-        secret = pyotp.random_base32()
-        users[username] = {"secret": secret}
-        save_users(users)
-
-        # Ответ
-        if request.is_json:
-            return jsonify({"status": "success", "secret": secret})
-        else:
-            return f"<h1>Success!</h1><p>Secret: {secret}</p><a href='/'>Login</a>"
-
-    # GET запрос - показываем форму
-    try:
-        return render_template('register.html')
-    except Exception as e:
-        return f"<h1>Error: Template 'register.html' not found!</h1><p>{e}</p>"
-
-@app.route('/login', methods=['POST'])
-def login():
-    # Данные из формы ИЛИ из JSON
-    username = request.form.get('username')
-    code = request.form.get('code')
-
-    if not username and request.is_json:
-        data = request.json
-        username = data.get('username')
-        code = data.get('code')
-
+# --- API (Логика сервера) ---
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    # САМОЕ ВАЖНОЕ: Читаем данные отовсюду (и JSON, и Форма)
+    data = request.get_json(silent=True) or request.form
+    
+    # Ищем имя пользователя
+    username = data.get('username')
+    
+    # Если имени нет — ругаемся в логах и возвращаем ошибку
+    if not username:
+        print(f"DEBUG: Data received but no username found. Data: {data}")
+        return jsonify({"status": "error", "message": "Username required"}), 400
+    
     users = load_users()
-    if username not in users:
-        return "User not found", 404
-
-    secret = users[username]['secret']
-    totp = pyotp.TOTP(secret)
-
-    if totp.verify(code):
-        if request.is_json:
-            return jsonify({"status": "success"})
-        return "<h1>Login Successful!</h1>"
-    else:
-        return "Invalid Code", 401
+    
+    if username in users:
+        return jsonify({"status": "error", "message": "User already exists"}), 400
+    
+    # Генерируем секрет
+    secret = pyotp.random_base32()
+    users[username] = {"secret": secret}
+    save_users(users)
+    
+    # Возвращаем секрет (чтобы юзер мог сохранить его)
+    return jsonify({
+        "status": "success", 
+        "message": "User created", 
+        "secret": secret
+    })
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+
