@@ -1,0 +1,81 @@
+body {
+    background-color: #0f0f12;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.container, .dashboard-container {
+    width: 100%;
+    max-width: 800px;
+    text-align: center;
+}
+
+/* Карточки */
+.card, .auth-module {
+    background: #1e1e24;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #333;
+    margin: 10px;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.1);
+}
+
+input {
+    display: block;
+    width: 90%;
+    margin: 10px auto;
+    padding: 10px;
+    background: #111;
+    border: 1px solid #444;
+    color: #0f0; /* Зеленый текст */
+    font-family: monospace;
+}
+
+button {
+    background: linear-gradient(45deg, #00ff00, #00aa00);
+    border: none;
+    padding: 10px 20px;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+}
+
+button:hover {
+    box-shadow: 0 0 10px #00ff00;
+}
+
+/* Cloud Authenticator */
+.code-display {
+    font-size: 60px;
+    letter-spacing: 10px;
+    color: #00ff00;
+    text-shadow: 0 0 10px #00ff00;
+    margin: 20px 0;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 5px;
+    background: #333;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: #00ff00;
+    width: 100%;
+    transition: width 1s linear;
+}
+
+.glitch {
+    font-size: 40px;
+    color: white;
+    text-transform: uppercase;
+}

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Nano Banana Auth</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1 class="glitch">Nano Banana OS</h1>
+
+        <div class="forms-container">
+            <div class="card">
+                <h2>Вход</h2>
+                <form action="/login" method="POST">
+                    <input type="text" name="login" placeholder="Логин" required>
+                    <input type="password" name="password" placeholder="Пароль" required>
+                    <button type="submit">Войти в Систему</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Регистрация</h2>
+                <form action="/register" method="POST">
+                    <input type="text" name="login" placeholder="Уникальный ID (login)" required>
+                    <input type="text" name="display_name" placeholder="Имя для системы" required>
+                    <input type="password" name="password" placeholder="Пароль" required>
+                    <button type="submit" class="btn-reg">Создать Аккаунт</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
