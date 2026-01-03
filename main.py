@@ -1,37 +1,76 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, request, jsonify
 import pyotp
 import json
 import os
 
-app = Flask(__name__) # Вот это то, что искал Render!
+app = Flask(__name__)
 
-# Метод для главной страницы
+# Путь к файлу базы данных (просто json для начала)
+DB_FILE = 'users.json'
+
+def load_users():
+    if not os.path.exists(DB_FILE):
+        return {}
+    with open(DB_FILE, 'r') as f:
+        try:
+            return json.load(f)
+        except json.JSONDecodeError:
+            return {}
+
+def save_users(users):
+    with open(DB_FILE, 'w') as f:
+        json.dump(users, f, indent=4)
+
 @app.route('/')
 def index():
-    return "Сервер CloudOC запущен! Используйте лаунчер для подключения."
+    return "CloudOC Server is Live! Use your Rust Launcher to connect."
 
-# Метод регистрации (def)
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
     username = data.get('username')
-    # Генерируем секретку для TOTP
+    
+    users = load_users()
+    if username in users:
+        return jsonify({"status": "error", "message": "User already exists"}), 400
+    
+    # Генерируем секрет для 2FA (Google Authenticator)
     secret = pyotp.random_base32()
+    users[username] = {"secret": secret}
+    save_users(users)
     
-    user_data = {username: {"secret": secret}}
+    # Ссылка, которую можно превратить в QR код (или просто ввести секрет в приложение)
+    provisioning_uri = pyotp.totp.TOTP(secret).provisioning_uri(
+        name=username, 
+        issuer_name="CloudOC"
+    )
     
-    # Сохраняем в файл (временное решение для Render)
-    with open('users.json', 'a') as f:
-        json.dump(user_data, f)
-        f.write('\n')
-        
-    return {"status": "success", "secret": secret}
+    return jsonify({
+        "status": "success", 
+        "secret": secret, 
+        "qr_link": provisioning_uri
+    })
 
-# Метод проверки кода (def)
-@app.route('/verify', methods=['POST'])
-def verify():
+@app.route('/login', methods=['POST'])
+def login():
     data = request.get_json()
     username = data.get('username')
-    code = data.get('code')
-    # Тут будет логика проверки из твоего старого кода
-    return {"status": "verified"}
+    otp_code = data.get('code') # 6 цифр из приложения
+    
+    users = load_users()
+    if username not in users:
+        return jsonify({"status": "error", "message": "User not found"}), 404
+    
+    # Проверка кода
+    secret = users[username]['secret']
+    totp = pyotp.TOTP(secret)
+    
+    if totp.verify(otp_code):
+        return jsonify({"status": "success", "message": "Logged in!"})
+    else:
+        return jsonify({"status": "error", "message": "Invalid 2FA code"}), 401
+
+if __name__ == "__main__":
+    # Настройка порта для Render
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
